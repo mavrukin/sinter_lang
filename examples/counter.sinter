@@ -1,0 +1,37 @@
+// Counter benchmark - loop performance test
+
+class Counter {
+  private:
+    var count: int = 0
+    var limit: int = 0
+  
+  public:
+    method setLimit(value: int) -> void {
+      limit = value;
+    }
+    
+    method run() -> int {
+      var i: int = 0;
+      while (i < limit) {
+        count = count + 1;
+        i = i + 1;
+      }
+      return count;
+    }
+    
+    method getCount() -> int {
+      return count;
+    }
+    
+    method clean() -> void {
+      // Free memory
+    }
+}
+
+function main() -> int {
+  var counter: Counter* = Counter.new();
+  counter.setLimit(100000000);
+  var result: int = counter.run();
+  counter.clean();
+  return 0;
+}

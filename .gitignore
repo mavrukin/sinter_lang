@@ -1,0 +1,56 @@
+# Bazel
+bazel-bin/
+bazel-out/
+bazel-sinter_lang/
+bazel-testlogs/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.venv/
+venv/
+ENV/
+
+# LLVM/Compiled
+*.ll
+*.o
+*.s
+
+# Compiled executables (in examples)
+examples/counter_cpp
+examples/counter_sinter
+examples/fibonacci_cpp
+examples/fibonacci_sinter
+examples/hospital
+examples/features_demo
+examples/showcase
+examples/field_init_test
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Lock files
+MODULE.bazel.lock

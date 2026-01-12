@@ -1,0 +1,107 @@
+// Comprehensive demo of Sinter language features
+
+class Counter {
+  private:
+    var count: int = 0
+    var name: str
+  
+  public:
+    method setName(n: str) -> void {
+      name = n;
+    }
+    
+    method increment() -> void {
+      count = count + 1;
+    }
+    
+    method decrement() -> void {
+      count = count - 1;
+    }
+    
+    method getCount() -> int {
+      return count;
+    }
+    
+    method reset() -> void {
+      count = 0;
+    }
+    
+    method release() -> void {
+      // Release pointer
+    }
+    
+    method clean() -> void {
+      // Free memory - this actually frees memory now!
+    }
+}
+
+function testForLoop() -> int {
+  var sum: int = 0;
+  
+  // Traditional for loop
+  for (var i: int = 0; i < 10; i = i + 1) {
+    sum = sum + i;
+  }
+  
+  return sum;
+}
+
+function testWhileWithBreak() -> int {
+  var i: int = 0;
+  var result: int = 0;
+  
+  while (i < 100) {
+    result = result + i;
+    i = i + 1;
+    if (i > 5) {
+      break;
+    }
+  }
+  
+  return result;
+}
+
+function testWhileWithContinue() -> int {
+  var i: int = 0;
+  var sum: int = 0;
+  
+  while (i < 10) {
+    i = i + 1;
+    if (i == 5) {
+      continue;
+    }
+    sum = sum + i;
+  }
+  
+  return sum;  // Should be 1+2+3+4+6+7+8+9+10 = 50
+}
+
+function main() -> int {
+  // Test class creation and methods
+  var counter: Counter* = Counter.new();
+  
+  // Test increment
+  counter.increment();
+  counter.increment();
+  counter.increment();
+  
+  var count: int = counter.getCount();
+  println(count);  // Should print 3
+  
+  // Test for loop
+  var forResult: int = testForLoop();
+  println(forResult);  // Should print 45 (0+1+2+...+9)
+  
+  // Test break
+  var breakResult: int = testWhileWithBreak();
+  println(breakResult);  // Should print 15 (0+1+2+3+4+5)
+  
+  // Test continue
+  var continueResult: int = testWhileWithContinue();
+  println(continueResult);  // Should print 50
+  
+  // Clean up - this now actually frees memory!
+  counter.clean();
+  
+  return 0;
+}

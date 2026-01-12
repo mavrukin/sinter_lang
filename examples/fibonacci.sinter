@@ -1,0 +1,50 @@
+// Fibonacci benchmark in Sinter
+
+class Fibonacci {
+  private:
+    var n: int = 0
+    var result: int = 0
+  
+  public:
+    method setN(value: int) -> void {
+      n = value;
+    }
+    
+    method calculate() -> int {
+      if (n < 2) {
+        result = n;
+        return n;
+      }
+      
+      var a: int = 0;
+      var b: int = 1;
+      var i: int = 2;
+      var temp: int = 0;
+      
+      while (i <= n) {
+        temp = a + b;
+        a = b;
+        b = temp;
+        i = i + 1;
+      }
+      
+      result = b;
+      return b;
+    }
+    
+    method getResult() -> int {
+      return result;
+    }
+    
+    method clean() -> void {
+      // Free memory
+    }
+}
+
+function main() -> int {
+  var fib: Fibonacci* = Fibonacci.new();
+  fib.setN(40);
+  var result: int = fib.calculate();
+  fib.clean();
+  return 0;
+}

@@ -1,0 +1,51 @@
+// Test field initialization with declared values
+
+class Config {
+  private:
+    var maxConnections: int = 100
+    var timeout: int = 30
+    var enabled: boolean = true
+  
+  public:
+    method getMaxConnections() -> int {
+      return maxConnections;
+    }
+    
+    method getTimeout() -> int {
+      return timeout;
+    }
+    
+    method isEnabled() -> boolean {
+      return enabled;
+    }
+    
+    method setMaxConnections(val: int) -> void {
+      maxConnections = val;
+    }
+    
+    method release() -> void {
+    }
+    
+    method clean() -> void {
+    }
+}
+
+function main() -> int {
+  var config: Config* = Config.new();
+  
+  // Test that fields are initialized to declared values
+  var maxConn: int = config.getMaxConnections();
+  println(maxConn);  // Expected: 100
+  
+  var timeout: int = config.getTimeout();
+  println(timeout);  // Expected: 30
+  
+  // Modify and verify
+  config.setMaxConnections(200);
+  var newMax: int = config.getMaxConnections();
+  println(newMax);  // Expected: 200
+  
+  config.clean();
+  
+  return 0;
+}

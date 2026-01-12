@@ -1,0 +1,37 @@
+// Hospital management example in Sinter
+
+class Hospital {
+  private:
+    const numRooms: int = 100
+    var numRoomsOccupied: int = 35
+
+  public:
+    method canAcceptMorePatients() -> boolean { 
+      return numRoomsOccupied < numRooms;
+    }
+    
+    method admitPatient() -> void {
+      numRoomsOccupied = numRoomsOccupied + 1;
+    }
+    
+    method getOccupancy() -> int {
+      return numRoomsOccupied;
+    }
+    
+    method release() -> void {
+      // Release this pointer (it may be held elsewhere)
+    }
+    
+    method clean() -> void {
+      // Free this pointer's memory
+    }
+}
+
+function main() -> int {
+  var hospital: Hospital* = Hospital.new();
+  if (hospital.canAcceptMorePatients()) {
+    hospital.admitPatient();
+  }
+  hospital.clean();
+  return 0;
+}

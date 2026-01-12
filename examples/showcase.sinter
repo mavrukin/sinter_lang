@@ -1,0 +1,185 @@
+// Sinter Language Feature Showcase
+// Demonstrates all major language features
+
+// Interface definition
+interface Drawable {
+  method draw() -> void;
+  method getArea() -> double;
+}
+
+// Class with private/public members
+class Rectangle {
+  private:
+    var width: int = 10
+    var height: int = 5
+  
+  public:
+    method setSize(w: int, h: int) -> void {
+      width = w;
+      height = h;
+    }
+    
+    method getWidth() -> int {
+      return width;
+    }
+    
+    method getHeight() -> int {
+      return height;
+    }
+    
+    method getArea() -> int {
+      return width * height;
+    }
+    
+    method getPerimeter() -> int {
+      return (width + height) * 2;
+    }
+    
+    method release() -> void {
+    }
+    
+    method clean() -> void {
+    }
+}
+
+// Test function with for loop
+function sumRange(start: int, end: int) -> int {
+  var sum: int = 0;
+  for (var i: int = start; i <= end; i = i + 1) {
+    sum = sum + i;
+  }
+  return sum;
+}
+
+// Fibonacci using while loop
+function fibonacci(n: int) -> int {
+  if (n <= 1) {
+    return n;
+  }
+  
+  var prev: int = 0;
+  var curr: int = 1;
+  var i: int = 2;
+  
+  while (i <= n) {
+    var next: int = prev + curr;
+    prev = curr;
+    curr = next;
+    i = i + 1;
+  }
+  
+  return curr;
+}
+
+// Function demonstrating break
+function findFirstDivisible(limit: int, divisor: int) -> int {
+  var result: int = 0;
+  
+  for (var i: int = 1; i <= limit; i = i + 1) {
+    if (i % divisor == 0) {
+      result = i;
+      break;
+    }
+  }
+  
+  return result;
+}
+
+// Function demonstrating continue
+function sumOddNumbers(limit: int) -> int {
+  var sum: int = 0;
+  
+  for (var i: int = 1; i <= limit; i = i + 1) {
+    if (i % 2 == 0) {
+      continue;
+    }
+    sum = sum + i;
+  }
+  
+  return sum;
+}
+
+// Factorial with recursion
+function factorial(n: int) -> int {
+  if (n <= 1) {
+    return 1;
+  }
+  return n * factorial(n - 1);
+}
+
+// Test boolean logic
+function testLogic(a: boolean, b: boolean) -> int {
+  if (a && b) {
+    return 3;
+  }
+  if (a || b) {
+    return 2;
+  }
+  return 1;
+}
+
+// Nested loops test
+function nestedLoopsSum(rows: int, cols: int) -> int {
+  var sum: int = 0;
+  for (var i: int = 0; i < rows; i = i + 1) {
+    for (var j: int = 0; j < cols; j = j + 1) {
+      sum = sum + (i * cols + j);
+    }
+  }
+  return sum;
+}
+
+function main() -> int {
+  println(111);  // Marker: starting tests
+  
+  // Test class creation and methods
+  var rect: Rectangle* = Rectangle.new();
+  rect.setSize(8, 6);
+  
+  var area: int = rect.getArea();
+  println(area);  // Expected: 48
+  
+  var perimeter: int = rect.getPerimeter();
+  println(perimeter);  // Expected: 28
+  
+  // Test for loop with range
+  var rangeSum: int = sumRange(1, 10);
+  println(rangeSum);  // Expected: 55
+  
+  // Test fibonacci
+  var fib10: int = fibonacci(10);
+  println(fib10);  // Expected: 55
+  
+  // Test break
+  var firstDiv: int = findFirstDivisible(20, 7);
+  println(firstDiv);  // Expected: 7
+  
+  // Test continue
+  var oddSum: int = sumOddNumbers(10);
+  println(oddSum);  // Expected: 25 (1+3+5+7+9)
+  
+  // Test factorial
+  var fact5: int = factorial(5);
+  println(fact5);  // Expected: 120
+  
+  // Test boolean logic
+  var logic1: int = testLogic(true, true);
+  println(logic1);  // Expected: 3
+  
+  var logic2: int = testLogic(true, false);
+  println(logic2);  // Expected: 2
+  
+  var logic3: int = testLogic(false, false);
+  println(logic3);  // Expected: 1
+  
+  // Test nested loops
+  var nested: int = nestedLoopsSum(3, 4);
+  println(nested);  // Expected: 0+1+2+3+4+5+6+7+8+9+10+11 = 66
+  
+  // Clean up - this actually frees memory
+  rect.clean();
+  
+  println(999);  // Marker: tests complete
+  
+  return 0;
+}

@@ -1,0 +1,15 @@
+module(name = "sinter_lang", version = "0.1.0")
+
+bazel_dep(name = "rules_python", version = "0.40.0")
+
+python = use_extension("@rules_python//python:extensions.bzl", "python")
+python.toolchain(python_version = "3.14")
+use_repo(python, "python3_14_toolchains")
+
+pip = use_extension("@rules_python//python:extensions.bzl", "pip")
+pip.parse(
+    name = "pip",
+    python_version = "3.14",
+    requirements_lock = "//:requirements.txt",
+)
+use_repo(pip, "pip")
