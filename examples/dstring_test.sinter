@@ -1,0 +1,32 @@
+// D-String (Dynamic String) Test
+// Demonstrates automatic string updates when referenced variables change
+
+function main() -> int {
+  // Create some variables
+  var count: int = 0;
+  var temperature: int = 72;
+  
+  // Create a D-string that references 'count'
+  // When count changes, this string automatically updates!
+  var message: str = D"The current count is: %s";
+  
+  // Print initial value
+  println(count);  // 0
+  
+  // Change count - the D-string will auto-update
+  count = 5;
+  println(count);  // 5
+  
+  // Change again
+  count = 42;
+  println(count);  // 42
+  
+  // Test with temperature
+  var tempMsg: str = D"Temperature: %s degrees";
+  println(temperature);  // 72
+  
+  temperature = 85;
+  println(temperature);  // 85
+  
+  return 0;
+}

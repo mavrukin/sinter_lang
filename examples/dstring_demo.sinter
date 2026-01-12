@@ -1,0 +1,44 @@
+// D-String (Dynamic String) Demonstration
+// Shows how D-strings automatically update when variables change
+// This is a unique feature of Sinter!
+
+function main() -> int {
+  // Create a counter variable
+  var count: int = 0;
+  
+  // Create a D-string that references count
+  // The {count} will be substituted with the current value
+  var msg: str = D"Counter value is: {count}";
+  
+  // Print the D-string - shows "Counter value is: 0"
+  println(msg);
+  
+  // Now change count
+  count = 10;
+  
+  // Print again - D-string AUTO-UPDATES to "Counter value is: 10"
+  println(msg);
+  
+  // Change again
+  count = 42;
+  
+  // Shows "Counter value is: 42"
+  println(msg);
+  
+  // Multiple variables demo
+  var x: int = 5;
+  var y: int = 7;
+  var coords: str = D"Position: ({x}, {y})";
+  
+  // Shows "Position: (5, 7)"
+  println(coords);
+  
+  // Update both variables
+  x = 100;
+  y = 200;
+  
+  // Auto-updates to "Position: (100, 200)"
+  println(coords);
+  
+  return 0;
+}

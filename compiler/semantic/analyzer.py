@@ -622,6 +622,10 @@ class SemanticAnalyzer:
         if source.name == "null" and target.is_pointer():
             return True
         
+        # D-strings are compatible with strings (they produce string values)
+        if target.name == "str" and source.name == "d_str":
+            return True
+        
         # Numeric promotions
         numeric_types = {"byte", "short", "int", "long", "float", "double"}
         if target.name in numeric_types and source.name in numeric_types:

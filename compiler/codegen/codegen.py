@@ -42,6 +42,14 @@ class CodeGenerator:
         self.generate_serialization = True  # Enable serialization code generation
         self.loop_stack: List[Tuple[str, str]] = []  # (continue_label, break_label)
         self.print_format_counter = 0
+        # D-string tracking: maps variable name -> list of (dstring_id, dstring_ptr)
+        self.dstring_var_refs: Dict[str, List[Tuple[int, str]]] = {}
+        self.dstring_format_constants: List[str] = []  # Format string constants to emit
+        self.dstring_counter = 0
+        # Current scope's D-strings: maps dstring_id -> llvm ptr
+        self.active_dstrings: Dict[int, str] = {}
+        # Track which variables hold D-strings (var_name -> dstring_llvm_ptr)
+        self.dstring_variables: Dict[str, str] = {}
     
     def generate(self, ast: Program) -> str:
         """Generate LLVM IR for the entire program"""
@@ -81,6 +89,13 @@ class CodeGenerator:
             if isinstance(decl, FunctionDeclaration):
                 self._generate_function(decl)
         
+        # Emit D-string format constants (generated during code generation)
+        if self.dstring_format_constants:
+            self._emit("")
+            self._emit("; D-string format string constants")
+            for const in self.dstring_format_constants:
+                self._emit(const)
+        
         return "\n".join(self.output)
     
     def _generate_runtime_declarations(self):
@@ -102,12 +117,9 @@ class CodeGenerator:
         self._emit("%String = type { i8*, i64 }")  # data, length
         self._emit("")
         
-        # D-String struct type
-        self._emit("; Dynamic String type")
-        self._emit("%DString = type { i8*, i64, i8*, i64, i8*, i32, i1 }")
-        self._emit("")
-        
-        # D-String runtime functions
+        # D-String type and runtime
+        self._emit(self.dstring_codegen.generate_dstring_type())
+        self._emit(self.dstring_codegen.generate_format_constants())
         self._emit(self.dstring_codegen.generate_dstring_runtime_functions())
         
         # Serialization string constants
@@ -129,7 +141,8 @@ class CodeGenerator:
         """Collect all string constants from the AST"""
         def visit(node):
             if isinstance(node, Literal):
-                if node.literal_type in ["str", "d_str"]:
+                # Only collect regular strings, not D-strings (handled separately)
+                if node.literal_type == "str":
                     if node.value not in self.string_constants:
                         name = f"@.str.{len(self.string_constants)}"
                         self.string_constants[node.value] = (name, len(node.value) + 1)
@@ -357,6 +370,10 @@ class CodeGenerator:
         self.local_var_types = {}
         self.temp_counter = 0
         self.has_returned = False
+        # Reset D-string tracking for this scope
+        self.dstring_var_refs = {}
+        self.active_dstrings = {}
+        self.dstring_variables = {}
         
         ret_type = self._get_llvm_type(self._resolve_type(method.return_type))
         
@@ -413,6 +430,10 @@ class CodeGenerator:
         self.local_var_types = {}  # Track types of local variables
         self.temp_counter = 0
         self.has_returned = False
+        # Reset D-string tracking for this scope
+        self.dstring_var_refs = {}
+        self.active_dstrings = {}
+        self.dstring_variables = {}
         
         ret_type = self._get_llvm_type(self._resolve_type(func.return_type))
         
@@ -496,10 +517,20 @@ class CodeGenerator:
         self.local_vars[stmt.name] = alloca_name
         self.local_var_types[stmt.name] = var_type
         
+        # Clear D-string tracking for this expression
+        self._last_dstring_ptr = None
+        self._last_dstring_id = None
+        
         # Initialize if there's an initial value
         if stmt.initial_value:
             value = self._generate_expression(stmt.initial_value)
             self._emit(f"  store {storage_type} {value}, {storage_type}* {alloca_name}")
+            
+            # Check if this was a D-string literal
+            if hasattr(self, '_last_dstring_ptr') and self._last_dstring_ptr:
+                # Track this variable as holding a D-string
+                self.dstring_variables[stmt.name] = (self._last_dstring_ptr, self._last_dstring_id)
+                self._emit(f"  ; Variable '{stmt.name}' holds D-string {self._last_dstring_id}")
     
     def _generate_return(self, stmt: ReturnStatement):
         """Generate return statement"""
@@ -668,6 +699,9 @@ class CodeGenerator:
                 var_type = self._infer_type(stmt.target)
                 llvm_type = self._get_llvm_type(var_type) if var_type else "i32"
                 self._emit(f"  store {llvm_type} {value}, {llvm_type}* {ptr}")
+                
+                # Mark any D-strings that reference this variable as dirty
+                self._mark_dstrings_dirty_for_var(var_name)
             elif self.current_class:
                 # Field access
                 field = self.current_class.get_field(var_name)
@@ -675,6 +709,15 @@ class CodeGenerator:
                     self._generate_field_store(var_name, value, field)
         elif isinstance(stmt.target, MemberAccess):
             self._generate_member_store(stmt.target, value)
+    
+    def _mark_dstrings_dirty_for_var(self, var_name: str):
+        """Mark all D-strings that reference this variable as dirty"""
+        if var_name in self.dstring_var_refs:
+            refs = self.dstring_var_refs[var_name]
+            for dstring_id, dstring_ptr in refs:
+                if dstring_id in self.active_dstrings:
+                    self._emit(f"  ; Mark D-string {dstring_id} dirty (var {var_name} changed)")
+                    self._emit(f"  call void @DString_markDirty(%DString* {self.active_dstrings[dstring_id]})")
     
     def _generate_expression(self, expr: Expression) -> str:
         """Generate code for an expression, return the result register"""
@@ -707,7 +750,10 @@ class CodeGenerator:
             return f"{float(lit.value):.15e}"
         elif lit.literal_type == "boolean":
             return "1" if lit.value else "0"
-        elif lit.literal_type in ["str", "d_str"]:
+        elif lit.literal_type == "d_str":
+            # D-string: create dynamic string with variable references
+            return self._generate_dstring_literal(lit.value)
+        elif lit.literal_type == "str":
             if lit.value in self.string_constants:
                 name, length = self.string_constants[lit.value]
                 temp = self._new_temp()
@@ -718,9 +764,96 @@ class CodeGenerator:
             return "null"
         return "0"
     
+    def _generate_dstring_literal(self, format_string: str) -> str:
+        """Generate code for a D-string literal with variable substitution"""
+        # Parse the format string to find variables
+        template, variables = DStringParser.parse(format_string)
+        
+        # Allocate a D-string ID
+        dstring_id = self.dstring_counter
+        self.dstring_counter += 1
+        
+        # Generate format string constant
+        format_len = len(template) + 1
+        escaped_template = template.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\0A')
+        const_name = f"@.dstr.fmt.{dstring_id}"
+        self.dstring_format_constants.append(
+            f'{const_name} = private unnamed_addr constant [{format_len} x i8] c"{escaped_template}\\00"'
+        )
+        
+        # Build variable info list
+        var_infos = []  # (var_name, llvm_ptr, type_code)
+        for var_name in variables:
+            if var_name in self.local_vars:
+                var_ptr = self.local_vars[var_name]
+                var_type = self.local_var_types.get(var_name)
+                type_code = self._get_dstring_type_code(var_type)
+                var_infos.append((var_name, var_ptr, type_code))
+                
+                # Register this D-string as depending on this variable
+                if var_name not in self.dstring_var_refs:
+                    self.dstring_var_refs[var_name] = []
+        
+        # Generate D-string creation code
+        self._emit(f"  ; Create D-string {dstring_id}: {format_string[:30]}...")
+        self._emit(f"  %dstr_{dstring_id}_fmt = getelementptr [{format_len} x i8], [{format_len} x i8]* {const_name}, i32 0, i32 0")
+        self._emit(f"  %dstr_{dstring_id} = call %DString* @DString_create(i8* %dstr_{dstring_id}_fmt, i64 {format_len}, i32 {len(var_infos)})")
+        
+        # Set each variable reference
+        for idx, (var_name, var_ptr, type_code) in enumerate(var_infos):
+            self._emit(f"  ; D-string var {idx}: {var_name}")
+            # Cast the alloca pointer to i8*
+            self._emit(f"  %dstr_{dstring_id}_vptr_{idx} = bitcast i8* {var_ptr} to i8*")
+            self._emit(f"  call void @DString_setVar(%DString* %dstr_{dstring_id}, i32 {idx}, i8* %dstr_{dstring_id}_vptr_{idx}, i32 {type_code})")
+            
+            # Track this dependency
+            self.dstring_var_refs[var_name].append((dstring_id, f"%dstr_{dstring_id}"))
+        
+        # Store in active D-strings
+        self.active_dstrings[dstring_id] = f"%dstr_{dstring_id}"
+        
+        # Store the D-string pointer for later retrieval
+        # We'll allocate storage and track this as a D-string variable
+        dstr_alloca = f"%dstr_{dstring_id}_ptr"
+        self._emit(f"  {dstr_alloca} = alloca %DString*")
+        self._emit(f"  store %DString* %dstr_{dstring_id}, %DString** {dstr_alloca}")
+        
+        # Mark that a D-string was just created (will be picked up by var declaration)
+        self._last_dstring_ptr = dstr_alloca
+        self._last_dstring_id = dstring_id
+        
+        # Return current string value (for immediate use)
+        result = self._new_temp()
+        self._emit(f"  {result} = call i8* @DString_get(%DString* %dstr_{dstring_id})")
+        return result
+    
+    def _get_dstring_type_code(self, sinter_type: Optional[SinterType]) -> int:
+        """Get the D-string variable type code for a Sinter type"""
+        if not sinter_type:
+            return 0  # INT by default
+        
+        type_map = {
+            "int": 0,      # DStringVarType.INT
+            "float": 1,    # DStringVarType.FLOAT
+            "double": 2,   # DStringVarType.DOUBLE
+            "boolean": 3,  # DStringVarType.BOOLEAN
+            "str": 4,      # DStringVarType.STRING
+        }
+        return type_map.get(sinter_type.name, 0)
+    
     def _generate_identifier(self, ident: Identifier) -> str:
         """Generate code for an identifier"""
         if ident.name in self.local_vars:
+            # Check if this is a D-string variable - need to call DString_get
+            if ident.name in self.dstring_variables:
+                dstr_ptr_alloca, dstring_id = self.dstring_variables[ident.name]
+                self._emit(f"  ; Load D-string variable '{ident.name}' (D-string {dstring_id})")
+                dstr_ptr = self._new_temp()
+                self._emit(f"  {dstr_ptr} = load %DString*, %DString** {dstr_ptr_alloca}")
+                result = self._new_temp()
+                self._emit(f"  {result} = call i8* @DString_get(%DString* {dstr_ptr})")
+                return result
+            
             ptr = self.local_vars[ident.name]
             # Get type from local_var_types if available
             if hasattr(self, 'local_var_types') and ident.name in self.local_var_types:
