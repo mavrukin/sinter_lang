@@ -282,26 +282,40 @@ var xml: str = config.as_xml();
 var restored: Config* = Config.from_json(jsonString);
 ```
 
-### 7. D-Strings (Dynamic Strings) — *Coming Soon*
+### 7. D-Strings (Dynamic Strings)
 
-D-strings are strings that automatically update when referenced variables change:
+D-strings are a unique Sinter feature — strings that automatically update when referenced variables change:
 
 ```sinter
 var count: int = 0;
 
-// Regular string - captures value at creation
-var staticMsg: str = "Count is {count}";  // "Count is 0"
+// D-string - the {count} is substituted with the variable's current value
+var msg: str = D"The count is: {count}";
 
-// D-string - updates dynamically
-var dynamicMsg: str = D"Count is {count}";
+println(msg);  // Output: "The count is: 0"
 
 count = 5;
-println(staticMsg);   // Still "Count is 0"
-println(dynamicMsg);  // Now "Count is 5"
+println(msg);  // Output: "The count is: 5" (auto-updated!)
 
-count = 10;
-println(dynamicMsg);  // Now "Count is 10"
+count = 42;
+println(msg);  // Output: "The count is: 42" (auto-updated again!)
 ```
+
+D-strings support multiple variables:
+
+```sinter
+var x: int = 10;
+var y: int = 20;
+var coords: str = D"Position: ({x}, {y})";
+
+println(coords);  // "Position: (10, 20)"
+
+x = 100;
+y = 200;
+println(coords);  // "Position: (100, 200)" - both values updated!
+```
+
+**How it works**: When you access a D-string variable, Sinter checks if any referenced variables have changed since the last access. If so, it regenerates the string with the new values. This happens automatically — no manual string formatting needed!
 
 ---
 

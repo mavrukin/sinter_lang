@@ -212,7 +212,7 @@ sinter_lang/
 | Interfaces | ✅ Complete |
 | Field Initialization | ✅ Complete |
 | Memory Cleanup | ✅ Complete |
-| D-Strings | 🚧 In Progress |
+| D-Strings | ✅ Complete |
 | JSON/XML Serialization | 🚧 In Progress |
 | Pointer Cleanup Validation | 🚧 In Progress |
 
