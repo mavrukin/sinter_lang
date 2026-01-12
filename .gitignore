@@ -1,14 +1,30 @@
-# Bazel
-bazel-bin/
-bazel-out/
-bazel-sinter_lang/
-bazel-testlogs/
+# ============================================================================
+# Sinter Language Project - .gitignore
+# ============================================================================
 
+# ----------------------------------------------------------------------------
+# Bazel Build System
+# ----------------------------------------------------------------------------
+# Bazel creates symlinks in the workspace root
+bazel-bin
+bazel-out
+bazel-testlogs
+bazel-sinter_lang
+# Bazel lock file (regenerated on build)
+MODULE.bazel.lock
+
+# ----------------------------------------------------------------------------
 # Python
+# ----------------------------------------------------------------------------
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+
+# C extensions
 *.so
+
+# Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -22,35 +38,158 @@ parts/
 sdist/
 var/
 wheels/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
+
+# Virtual environments
 .venv/
 venv/
 ENV/
+env/
+.env
 
-# LLVM/Compiled
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# pytest / testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# mypy
+.mypy_cache/
+
+# ----------------------------------------------------------------------------
+# LLVM / Compiler Output
+# ----------------------------------------------------------------------------
+# LLVM IR files (generated during compilation)
 *.ll
-*.o
-*.s
 
-# Compiled executables (in examples)
-examples/counter_cpp
-examples/counter_sinter
-examples/fibonacci_cpp
-examples/fibonacci_sinter
+# Object files
+*.o
+*.obj
+
+# Assembly files
+*.s
+*.asm
+
+# Executable files (no extension on Unix)
+# We use a pattern to catch compiled Sinter programs
+*.out
+
+# ----------------------------------------------------------------------------
+# Compiled Sinter Programs (in examples/)
+# ----------------------------------------------------------------------------
+# Sinter executables (compiled from .sinter files)
+examples/*_sinter
+examples/*_cpp
+
+# Specific compiled examples (no extension)
 examples/hospital
 examples/features_demo
 examples/showcase
 examples/field_init_test
+examples/dstring_demo
+examples/dstring_test
+examples/counter
+examples/fibonacci
 
-# IDE
+# Keep the source files
+!examples/*.sinter
+!examples/*.cpp
+
+# ----------------------------------------------------------------------------
+# IDE and Editor Files
+# ----------------------------------------------------------------------------
+# JetBrains IDEs
 .idea/
+*.iml
+*.iws
+*.ipr
+
+# VS Code
 .vscode/
+*.code-workspace
+
+# Vim/Neovim
 *.swp
 *.swo
 *~
-.DS_Store
+.netrwhist
+tags
 
-# Lock files
-MODULE.bazel.lock
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# ----------------------------------------------------------------------------
+# OS Generated Files
+# ----------------------------------------------------------------------------
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# ----------------------------------------------------------------------------
+# Miscellaneous
+# ----------------------------------------------------------------------------
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Archives (if accidentally created in workspace)
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+
+# Core dumps
+core
+core.*
+
+# Coverage reports
+coverage/
+*.gcov
+*.gcda
+*.gcno
+
+# Profiling
+*.prof
+*.profile
